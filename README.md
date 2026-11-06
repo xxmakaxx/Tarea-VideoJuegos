@@ -6,7 +6,7 @@ Cada material pesa, cuesta y resiste distinto: si una viga soporta más fuerza d
 ## Documentación de la entrega
 - [Documento de diseño](DISENO.md): decisiones de jugabilidad y mecánicas implementadas.
 - [Lista de assets](ASSETS.md): qué se usó y de dónde se obtuvo.
-- Video de demostración: se encuentra dentro de la carpeta raíz.
+- [Video de demostración]: se encuentra en `VideoMuestra/`
 
 ## Instalación
 1. Clonar el repositorio (incluye la carpeta `engine/` del curso junto a `MakeABridge/`).
