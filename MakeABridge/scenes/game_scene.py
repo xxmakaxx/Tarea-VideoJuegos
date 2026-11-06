@@ -51,13 +51,13 @@ class GameScene(Scene):
         self.nodos, self.vigas = [], []
         self._crear_anclas()
         self.material = MATERIALES_ORDEN[0]
-        self.arrastre = None            # nodo desde el que se está arrastrando una viga
+        self.arrastre = None            
         self.fase = "construccion"
         self.resultado = None
         self.t_resultado = 0
         self.t_sim = 0.0
         self.t_quieto = 0.0
-        self.hubo_rotura = False       # ya sonó 'romper' en esta prueba
+        self.hubo_rotura = False       
         self.caminante = None
         self.grilla = self._crear_grilla()
 
@@ -66,11 +66,10 @@ class GameScene(Scene):
         self.dialogos.show_message(f"Nivel {nivel + 1}: {d['nombre']}", 3, "center")
 
     def on_enter(self):
-        self.game.audio.stop_music()       # la música es del menú
+        self.game.audio.stop_music()       
 
     # ---------------------------------------------------------------- mundo
     def _montar(self):
-        #(Re)crea el mundo físico limpio: terreno + muñeco. El diseño del jugador se conserva
         d = self.datos
         self.mundo = MundoFisico()
         self.terreno = pygame.sprite.Group()
@@ -88,7 +87,7 @@ class GameScene(Scene):
             v.reiniciar()
 
     def _crear_anclas(self):
-        #Anclajes fijos: bordes y caras de los acantilados y la parte superior de los pilares.
+        """Anclajes fijos: bordes y caras de los acantilados y la parte superior de los pilares."""
         d = self.datos
         pts = []
         for x, top in ((d["izq"], d["top_izq"]), (d["der"], d["top_der"])):
@@ -134,7 +133,6 @@ class GameScene(Scene):
         return any(r.inflate(-4, -4).collidepoint(p) for r in self.rects_terreno)
 
     def _evaluar(self, origen, pos_fin, material, snap=True):
-        #Devuelve (ok, destino_nodo, destino_pos, motivo) para una viga desde 'origen' hasta 'pos_fin'
         pos_fin = pygame.Vector2(pos_fin)
         destino = self._nodo_cerca(pos_fin)
         if destino is not None:
@@ -164,7 +162,6 @@ class GameScene(Scene):
         return True, destino, pto, f"${costo}"
 
     def agregar_viga(self, origen, pos_fin, material, snap=True):
-        """Crea una viga (y el nodo final si no existía). Devuelve (ok, motivo)."""
         ok, destino, pto, motivo = self._evaluar(origen, pos_fin, material, snap)
         if not ok:
             return False, motivo
@@ -210,11 +207,11 @@ class GameScene(Scene):
         resist_max = self.resist_max = max(d["resist"] for d in VIGAS.values())
         modo = SELECTOR_POSICION
         for i, mat in enumerate(MATERIALES_ORDEN):
-            if modo == "abajo":          # barra inferior: solo el ícono de la viga
+            if modo == "abajo":          
                 x, y, w, h = 14 + i * 88, BARRA_INF_Y + 5, 84, 46
-            elif modo == "izquierda":    # columna vertical a la izquierda
+            elif modo == "izquierda":   
                 x, y, w, h = 24, 66 + i * 50, 200, 46
-            else:                        # fila horizontal arriba
+            else:                        
                 x, y, w, h = 20 + i * 158, 66, 150, (60 if SELECTOR_CON_MARCO else 56)
             self.botones_mat.append(SelectorMaterial(x, y, w, h, mat, VIGAS[mat], i, resist_max,
                                                      lambda m=mat: self._elegir(m), audio,
@@ -231,7 +228,6 @@ class GameScene(Scene):
             self.btn_volver = SoundButton(ANCHO - 14 - 224, y, 224, 34, "Volver a construir",
                                           self._volver_a_construir, audio, font_size=22)
         elif modo == "izquierda":
-            # la columna ocupa esta zona: no se puede construir ni soltar vigas ahí
             self.zona_ui = pygame.Rect(8, 58, 228, 5 * 50 + 8)
             bx, by, bw = ANCHO - 224, 70, 204
             self.btn_probar = SoundButton(bx, by, bw, 30, "¡Probar!", self._probar, audio, font_size=26)
@@ -257,7 +253,6 @@ class GameScene(Scene):
         self.material = mat
 
     def _camino_continuo(self):
-        #Comprueba que haya un camino pisable de un acantilado al otro. Devuelve (ok, mensaje)
         d = self.datos
         def ancla(x, top):
             for n in self.nodos:
@@ -293,7 +288,7 @@ class GameScene(Scene):
             return
         ok, mensaje = self._camino_continuo()
         if not ok:
-            self.dialogos.show_message(mensaje, 4, "center")      # no cuenta como intento
+            self.dialogos.show_message(mensaje, 4, "center")      
             self.game.reproducir("click")
             return
         self._montar()
@@ -303,13 +298,12 @@ class GameScene(Scene):
         self.t_sim = 0.0
         self.t_quieto = 0.0
         self.hubo_rotura = False
-        self.fase = "prueba"
-        self.intentos -= 1
+        self.fase = "prueba"                       
 
     def _volver_a_construir(self):
-        if self.fase == "prueba" and self.t_sim < RETRASO_INICIO:
-            self.intentos += 1                      # no empezó a caminar: no cuenta como intento
-        elif self.intentos <= 0:
+        if self.fase == "prueba" and self.hubo_rotura:
+            self.intentos -= 1                     
+        if self.intentos <= 0:
             self.game.change_scene("game_over", nivel=self.nivel)
             return
         self._montar()
@@ -356,6 +350,7 @@ class GameScene(Scene):
             self.dialogos.show_message("¡Cruzó! El puente aguantó", 2.5, "center")
             self.game.reproducir("exito")
         else:
+            self.intentos -= 1                      # solo un fallo cuesta un intento
             if motivo == "tiempo":
                 texto = "¡No llegó a tiempo!"
             elif self.hubo_rotura:
@@ -364,7 +359,7 @@ class GameScene(Scene):
                 texto = "El gato no pudo cruzar: revisá huecos o escalones"
             self.dialogos.show_message(texto, 2.5, "center")
             if motivo == "cayó" and not self.hubo_rotura:
-                self.game.reproducir("romper")      # el puente no se rompió pero no sostuvo al gato
+                self.game.reproducir("romper")      
         if DEBUG:
             rotas = sum(1 for v in self.vigas if v.rota)
             pos = self.caminante.body.position if self.caminante else (0, 0)
@@ -431,7 +426,6 @@ class GameScene(Scene):
         surface.blit(t, (pto.x + 10, pto.y - 24))
 
     def _dibujar_barras(self, surface):
-        #Interfaz tipo Poly Bridge: barra superior (nivel, presupuesto, intentos, acciones) e inferior (materiales)
         def barra(rect, borde_arriba):
             v = pygame.Surface(rect.size, pygame.SRCALPHA)
             v.fill((26, 20, 36, 205))
@@ -455,7 +449,7 @@ class GameScene(Scene):
         for i in range(INTENTOS):
             surface.blit(lleno if i < self.intentos else vacio, (ANCHO // 2 + 120 + i * 26, 22))
 
-        # ---- barra inferior (solo mientras se construye)
+        # ---- barra inferior
         if self.fase == "construccion":
             inf = pygame.Rect(0, BARRA_INF_Y, ANCHO, ALTO - BARRA_INF_Y)
             barra(inf, borde_arriba=True)

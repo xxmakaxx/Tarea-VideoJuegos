@@ -35,3 +35,4 @@ Materiales: camino, camino reforzado, madera, acero y cable (solo resiste tracci
 ## Estructura
     engine/        motor hecho en clase
     MakeABridge/   el juego (escenas, física del puente, estilo y assets)
+    VideoMuestra/ video corto de la jugabilidad
