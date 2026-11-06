@@ -65,7 +65,7 @@ camina, **no es lanzado**. Falla si cae al valle, queda trabado 2 s o supera 45 
 | 3. El abismo | 24 m | pilar angosto + desnivel de 2 m | $20 000 | 10 |
 
 La dificultad sube por tres vías: tramos más largos, un gato más pesado (más carga) y terreno más complejo
-(pilares y desnivel). El presupuesto crece menos que la luz, así que hay que elegir materiales con criterio.
+(pilares y desnivel). El presupuesto crece muy poco, así que hay que elegir materiales con criterio.
 Cada nivel da 5 intentos.
 
 ## 5. Decisiones de jugabilidad
@@ -74,8 +74,8 @@ Cada nivel da 5 intentos.
 - **Retroalimentación visual del esfuerzo** (verde → amarillo → rojo): enseña qué parte falla y qué reforzar sin explicar física.
 - **Intentos limitados** para que probar no sea gratis, pero los errores de construcción evitables (huecos) no penalizan.
 - **Camino separado de la estructura**: obliga a pensar en dos capas, la superficie por donde se camina y el esqueleto que la sostiene.
-- **Muñeco que camina** en vez de proyectiles: el desafío es el equilibrio y la distribución de cargas, que es lo que pide la opción 3.
-- **Estilo visual** de papel y acuarela con fondo en parallax (nubes y colinas en movimiento) y fuente arcade (Press Start 2P).
+- **Muñeco que camina** en vez de proyectiles: el desafío es el equilibrio y la distribución de cargas.
+- **Estilo visual** pixel art de 8 bits con fondo en parallax (nubes y colinas con pinos en movimiento) y fuente arcade (Press Start 2P).
 - **Sonido** en cada acción: clic, colocar viga, romper, éxito, y música en el menú y en Game Over.
 
 ## 6. Arquitectura

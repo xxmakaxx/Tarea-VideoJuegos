@@ -23,7 +23,7 @@ class Suelo(GameObject):
 
 
 class Plataforma(GameObject):
-    """Terreno fijo (acantilado o pilar del valle): imagen de tierra con pasto + polígono estático de Pymunk."""
+    #Terreno fijo (acantilado o pilar del valle): imagen de tierra con pasto + polígono estático de Pymunk
 
     def __init__(self, mundo, x, top, ancho, alto):
         imagen = estilo.textura_suelo(ancho, alto, HIERBA)
@@ -39,12 +39,8 @@ class Plataforma(GameObject):
 
 
 class Caminante(PhysicsObject):
-    """
-    El muñeco que cruza el puente. Es un PhysicsObject del motor con una cápsula que no rota,
-    y camina hacia la derecha empujándose con una velocidad objetivo (no es lanzado).
-    """
-    # Cápsula del cuerpo = dos puntos (coordenadas locales al centro) + radio.
-    # El gato es bajo y largo (horizontal); el muñeco es alto y angosto (vertical).
+    #El gato que cruza el puente. Es un PhysicsObject del motor con una cápsula que no rota,
+    #y camina hacia la derecha empujándose con una velocidad objetivo (no es lanzado.
     if PERSONAJE == "gato":
         PUNTOS, RADIO = ((-9, 0), (9, 0)), 9
     else:
@@ -69,7 +65,7 @@ class Caminante(PhysicsObject):
         mundo.space.add(self.body, self.shape)
 
     def controlar(self):
-        """Se llama antes de cada subpaso de física."""
+        #Se llama antes de cada subpaso de física.
         if self.activo:
             self.body.velocity = (VEL_CAMINANTE, self.body.velocity.y)
 

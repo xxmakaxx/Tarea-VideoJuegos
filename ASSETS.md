@@ -6,10 +6,10 @@ y `MakeABridge/puente.py`. No se usaron imágenes ni sprites externos.
 
 | Elemento | Dónde se genera |
 |---|---|
-| Fondo (papel, grano, nubes y colinas en parallax) | `fondo.py`, `estilo.py` |
-| Terreno (tierra con pasto) y bandera de meta | `estilo.py` |
-| Gato (animación de caminata) | `estilo.py` (`frames_gato`) |
-| Vigas, nodos y anclajes | `puente.py` |
+| Fondo pixel art (cielo en franjas con tramado, sol, nubes, montañas y colinas con pinos en parallax) | `fondo.py`, `estilo.py` |
+| Terreno (tierra con estratos, piedritas y pasto en bloques) y bandera de meta | `estilo.py` |
+| Gato pixelado (22x15 píxeles de arte, ampliado x2, animación de caminata) | `estilo.py` (`frames_gato`) |
+| Vigas, nodos y anclajes (dibujados en baja resolución y ampliados sin suavizar) | `puente.py` |
 
 ## Fuente
 | Archivo | Origen | Licencia |

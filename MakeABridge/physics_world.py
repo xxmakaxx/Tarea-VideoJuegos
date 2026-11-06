@@ -4,12 +4,11 @@ from .settings import GRAVEDAD, SUBPASOS
 
 
 class MundoFisico:
-    """Envuelve el pymunk.Space. Avanza la simulación en varios subpasos por frame."""
 
     def __init__(self):
         self.space = pymunk.Space()
         self.space.gravity = GRAVEDAD
-        self.space.iterations = 40        # más iteraciones = uniones más rígidas
+        self.space.iterations = 40        
 
     def step(self, dt, subpasos=SUBPASOS, antes=None, despues=None):
         h = dt / subpasos

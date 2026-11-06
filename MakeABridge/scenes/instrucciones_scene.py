@@ -41,7 +41,7 @@ COLUMNA_DER = [
 
 
 def envolver(texto, fuente, ancho):
-    """Parte un texto en líneas que entren en 'ancho' píxeles."""
+    #Parte un texto en líneas que entren en 'ancho' píxeles
     lineas, actual = [], ""
     for palabra in texto.split():
         prueba = f"{actual} {palabra}".strip()
@@ -56,7 +56,7 @@ def envolver(texto, fuente, ancho):
 
 
 class InstruccionesScene(Scene):
-    """Pantalla previa al juego: explica todo lo que hay que saber antes de empezar."""
+    #Pantalla previa al juego: explica todo lo que hay que saber antes de empezar
 
     def __init__(self, game):
         super().__init__(game)

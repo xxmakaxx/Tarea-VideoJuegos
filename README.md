@@ -3,12 +3,10 @@
 Construí un puente con vigas unidas por articulaciones para que un gato lo cruce caminando hasta la bandera.
 Cada material pesa, cuesta y resiste distinto: si una viga soporta más fuerza de la que aguanta, se rompe.
 
-Tarea TVJ2D 2026 — opción 3: juego con físicas 2D.
-
 ## Documentación de la entrega
 - [Documento de diseño](DISENO.md): decisiones de jugabilidad y mecánicas implementadas.
 - [Lista de assets](ASSETS.md): qué se usó y de dónde se obtuvo.
-- Video de demostración: COMPLETAR (enlace o ruta, 15 a 40 s).
+- Video de demostración: se encuentra dentro de la carpeta raíz.
 
 ## Instalación
 1. Clonar el repositorio (incluye la carpeta `engine/` del curso junto a `MakeABridge/`).

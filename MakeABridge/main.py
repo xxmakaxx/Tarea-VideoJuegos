@@ -1,4 +1,4 @@
-# MakeABridge/main.py   (ejecutar desde la carpeta raíz:  python -m MakeABridge.main)
+# MakeABridge/main.py   
 from .game import FisicasGame
 
 

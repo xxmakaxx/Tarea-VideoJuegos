@@ -39,7 +39,7 @@ VIGAS = {
 }
 
 # --- Caminante ---
-PERSONAJE = "gato"           # "gato" o "muneco"
+PERSONAJE = "gato"           
 INICIO_X = 90
 META_X = 880
 VEL_CAMINANTE = 90
@@ -59,6 +59,6 @@ NIVELES = [
 ]
 
 # --- Fin de partida ---
-ESPERA_VICTORIA = 2500       # ms que se muestra el éxito antes de pasar de nivel
-ESPERA_FALLO = 1800          # ms que se muestra el desplome antes de volver a construir
+ESPERA_VICTORIA = 2500       
+ESPERA_FALLO = 1800          
 DEBUG = False

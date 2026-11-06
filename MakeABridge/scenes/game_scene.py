@@ -8,22 +8,24 @@ from ..settings import (ANCHO, ALTO, FPS, SUELO_Y, GRID, PANEL_H, ANCLA_RADIO, I
 from ..physics_world import MundoFisico
 from ..fondo import crear_fondo
 from .. import estilo
-from ..widgets import SoundButton
+from ..widgets import SoundButton, SelectorMaterial, IconButton, dibujar_info_material, panel_pixel, _texto
 from ..entities import Suelo, Plataforma, Caminante
 from ..puente import Nodo, Viga, construir_fisica, revisar_roturas
 
 MATERIALES_ORDEN = list(VIGAS.keys())
+SELECTOR_CON_MARCO = False   # True = tarjetas con recuadro marrón, False = solo la viga y el texto
+SELECTOR_POSICION = "abajo"   # "abajo" (barras tipo Poly Bridge), "izquierda" (columna) o "arriba" (fila horizontal)
+BARRA_SUP_H = 46               # alto de la barra superior (solo con "abajo")
+BARRA_INF_Y = ALTO - 56        # donde empieza la barra inferior (solo con "abajo")
 COLOR_BOTON = (120, 82, 46)
 COLOR_BOTON_SEL = (176, 128, 70)
 
 
 class GameScene(Scene):
-    """
-    Constructor de puentes (estilo Poly Bridge). Fases:
-      construccion -> el jugador arma nodos y vigas dentro del presupuesto (física en pausa)
-      prueba       -> la física corre y el muñeco camina por el puente; las vigas se rompen si se sobrecargan
-      resultado    -> breve pausa mostrando éxito o desplome
-    """
+    #Constructor de puentes (estilo Poly Bridge). Fases:
+      #construccion -> el jugador arma nodos y vigas dentro del presupuesto (física en pausa)
+      #prueba       -> la física corre y el muñeco camina por el puente; las vigas se rompen si se sobrecargan
+      #resultado    -> breve pausa mostrando éxito o desplome
 
     def __init__(self, game, nivel=0):
         super().__init__(game)
@@ -68,7 +70,7 @@ class GameScene(Scene):
 
     # ---------------------------------------------------------------- mundo
     def _montar(self):
-        """(Re)crea el mundo físico limpio: terreno + muñeco. El diseño del jugador se conserva."""
+        #(Re)crea el mundo físico limpio: terreno + muñeco. El diseño del jugador se conserva
         d = self.datos
         self.mundo = MundoFisico()
         self.terreno = pygame.sprite.Group()
@@ -86,7 +88,7 @@ class GameScene(Scene):
             v.reiniciar()
 
     def _crear_anclas(self):
-        """Anclajes fijos: bordes y caras de los acantilados y la parte superior de los pilares."""
+        #Anclajes fijos: bordes y caras de los acantilados y la parte superior de los pilares.
         d = self.datos
         pts = []
         for x, top in ((d["izq"], d["top_izq"]), (d["der"], d["top_der"])):
@@ -132,18 +134,21 @@ class GameScene(Scene):
         return any(r.inflate(-4, -4).collidepoint(p) for r in self.rects_terreno)
 
     def _evaluar(self, origen, pos_fin, material, snap=True):
-        """Devuelve (ok, destino_nodo, destino_pos, motivo) para una viga desde 'origen' hasta 'pos_fin'."""
+        #Devuelve (ok, destino_nodo, destino_pos, motivo) para una viga desde 'origen' hasta 'pos_fin'
         pos_fin = pygame.Vector2(pos_fin)
         destino = self._nodo_cerca(pos_fin)
         if destino is not None:
             pto = destino.pos
         else:
             pto = self._snap(pos_fin) if snap else pos_fin
-            if pto.y < PANEL_H or pto.y > SUELO_Y - 5 or not (0 <= pto.x <= ANCHO) or self._en_terreno(pto):
+            if (pto.y < PANEL_H or pto.y > SUELO_Y - 5 or not (0 <= pto.x <= ANCHO) or self._en_terreno(pto)
+                    or self.zona_ui.collidepoint(pto)):
                 return False, None, pto, "posición inválida"
         if destino is origen:
             return False, None, pto, "sin longitud"
         datos = VIGAS[material]
+        if datos.get("cable") and origen.fijo and destino is not None and destino.fijo:
+            return False, None, pto, "un cable no puede unir dos anclajes"
         largo = origen.pos.distance_to(pto)
         if largo < 15:
             return False, None, pto, "muy corta"
@@ -201,21 +206,49 @@ class GameScene(Scene):
     def _crear_botones(self):
         audio = self.game.audio
         self.botones_mat = []
-        x = 20
-        for mat in MATERIALES_ORDEN:
-            d = VIGAS[mat]
-            b = SoundButton(x, 84, 150, 34, f"{d['nombre']} ${d['precio']}",
-                            lambda m=mat: self._elegir(m), audio, font_size=22)
-            self.botones_mat.append(b)
-            x += 156
-        self.btn_probar = SoundButton(20, 124, 190, 34, "¡Probar!", self._probar, audio, font_size=26)
-        self.btn_limpiar = SoundButton(220, 124, 170, 34, "Limpiar", self._limpiar_todo, audio, font_size=26)
-        self.btn_volver = SoundButton(20, 124, 300, 34, "Volver a construir", self._volver_a_construir,
-                                      audio, font_size=26)
+        self.btn_deshacer = None
+        resist_max = self.resist_max = max(d["resist"] for d in VIGAS.values())
+        modo = SELECTOR_POSICION
+        for i, mat in enumerate(MATERIALES_ORDEN):
+            if modo == "abajo":          # barra inferior: solo el ícono de la viga
+                x, y, w, h = 14 + i * 88, BARRA_INF_Y + 5, 84, 46
+            elif modo == "izquierda":    # columna vertical a la izquierda
+                x, y, w, h = 24, 66 + i * 50, 200, 46
+            else:                        # fila horizontal arriba
+                x, y, w, h = 20 + i * 158, 66, 150, (60 if SELECTOR_CON_MARCO else 56)
+            self.botones_mat.append(SelectorMaterial(x, y, w, h, mat, VIGAS[mat], i, resist_max,
+                                                     lambda m=mat: self._elegir(m), audio,
+                                                     marco=SELECTOR_CON_MARCO, fila=(modo == "izquierda"),
+                                                     ranura=(modo == "abajo")))
+        if modo == "abajo":
+            self.zona_ui = pygame.Rect(0, BARRA_INF_Y, ANCHO, ALTO - BARRA_INF_Y)
+            y = 6
+            self.btn_jugar = IconButton(ANCHO - 14 - 56, y, 56, 34, "jugar", self._probar, audio,
+                                        color=(52, 140, 72), hover_color=(76, 176, 96), color_icono=(250, 250, 230))
+            self.btn_probar = self.btn_jugar
+            self.btn_limpiar = IconButton(ANCHO - 14 - 56 - 8 - 40, y, 40, 34, "basura", self._limpiar_todo, audio)
+            self.btn_deshacer = IconButton(ANCHO - 14 - 56 - 16 - 80, y, 40, 34, "deshacer", self._deshacer, audio)
+            self.btn_volver = SoundButton(ANCHO - 14 - 224, y, 224, 34, "Volver a construir",
+                                          self._volver_a_construir, audio, font_size=22)
+        elif modo == "izquierda":
+            # la columna ocupa esta zona: no se puede construir ni soltar vigas ahí
+            self.zona_ui = pygame.Rect(8, 58, 228, 5 * 50 + 8)
+            bx, by, bw = ANCHO - 224, 70, 204
+            self.btn_probar = SoundButton(bx, by, bw, 30, "¡Probar!", self._probar, audio, font_size=26)
+            self.btn_limpiar = SoundButton(bx, by + 38, bw, 30, "Limpiar", self._limpiar_todo, audio, font_size=26)
+            self.btn_volver = SoundButton(ANCHO - 324, by, 304, 30, "Volver a construir",
+                                          self._volver_a_construir, audio, font_size=26)
+        else:
+            self.zona_ui = pygame.Rect(0, 0, 0, 0)
+            self.btn_probar = SoundButton(20, 132, 190, 28, "¡Probar!", self._probar, audio, font_size=26)
+            self.btn_limpiar = SoundButton(220, 132, 170, 28, "Limpiar", self._limpiar_todo, audio, font_size=26)
+            self.btn_volver = SoundButton(20, 132, 300, 28, "Volver a construir", self._volver_a_construir,
+                                          audio, font_size=26)
 
     def _botones_activos(self):
         if self.fase == "construccion":
-            return self.botones_mat + [self.btn_probar, self.btn_limpiar]
+            extra = [self.btn_deshacer] if self.btn_deshacer else []
+            return self.botones_mat + extra + [self.btn_probar, self.btn_limpiar]
         if self.fase == "prueba":
             return [self.btn_volver]
         return []
@@ -224,7 +257,7 @@ class GameScene(Scene):
         self.material = mat
 
     def _camino_continuo(self):
-        """Comprueba que haya un camino pisable de un acantilado al otro. Devuelve (ok, mensaje)."""
+        #Comprueba que haya un camino pisable de un acantilado al otro. Devuelve (ok, mensaje)
         d = self.datos
         def ancla(x, top):
             for n in self.nodos:
@@ -296,7 +329,8 @@ class GameScene(Scene):
                         self.material = MATERIALES_ORDEN[e.key - pygame.K_1]
                     elif e.key == pygame.K_z:
                         self._deshacer()
-            elif e.type == pygame.MOUSEBUTTONDOWN and e.pos[1] >= PANEL_H and self.fase == "construccion":
+            elif e.type == pygame.MOUSEBUTTONDOWN and e.pos[1] >= PANEL_H and self.fase == "construccion" \
+                    and not self.zona_ui.collidepoint(e.pos):
                 if e.button == 1:
                     self.arrastre = self._nodo_cerca(e.pos)
                 elif e.button == 3:
@@ -391,10 +425,48 @@ class GameScene(Scene):
         mp = pygame.mouse.get_pos()
         ok, destino, pto, motivo = self._evaluar(self.arrastre, mp, self.material)
         color = (60, 200, 90) if ok else (220, 60, 50)
-        pygame.draw.line(surface, color, self.arrastre.pos, pto, max(3, VIGAS[self.material]["grosor"]))
-        pygame.draw.circle(surface, color, (int(pto.x), int(pto.y)), 6, 2)
+        estilo.linea_pixel(surface, color, self.arrastre.pos, pto, max(3, VIGAS[self.material]["grosor"]))
+        estilo.disco_pixel(surface, color, pto, 6, borde=2, borde_color=estilo.CONTORNO)
         t = self.fuente_chica.render(motivo, True, estilo.TINTA)
         surface.blit(t, (pto.x + 10, pto.y - 24))
+
+    def _dibujar_barras(self, surface):
+        #Interfaz tipo Poly Bridge: barra superior (nivel, presupuesto, intentos, acciones) e inferior (materiales)
+        def barra(rect, borde_arriba):
+            v = pygame.Surface(rect.size, pygame.SRCALPHA)
+            v.fill((26, 20, 36, 205))
+            surface.blit(v, rect.topleft)
+            y = rect.y if borde_arriba else rect.bottom - 3
+            pygame.draw.rect(surface, estilo.CONTORNO, (rect.x, y - (2 if borde_arriba else 0), rect.w, 5))
+            pygame.draw.rect(surface, (96, 82, 112), (rect.x, y + (2 if borde_arriba else 0), rect.w, 2))
+
+        # ---- barra superior
+        sup = pygame.Rect(0, 0, ANCHO, BARRA_SUP_H)
+        barra(sup, borde_arriba=False)
+        f_ch, f_med, f_gde = estilo.fuente_arcade(8), estilo.fuente_arcade(10), estilo.fuente_arcade(18)
+        _texto(surface, f_med, f"Nivel {self.nivel + 1}/{len(NIVELES)}", (16, 9), (250, 238, 206))
+        _texto(surface, f_ch, self.datos["nombre"], (16, 27), (226, 200, 150))
+        verde = (110, 232, 120) if self.restante >= self.datos["presupuesto"] * 0.1 else (236, 96, 84)
+        _texto(surface, f_gde, f"${self.restante}", (ANCHO // 2, 6), verde, "midtop")
+        _texto(surface, f_ch, f"Presupuesto: ${self.datos['presupuesto']}", (ANCHO // 2, 30), (226, 200, 150), "midtop")
+        # intentos como corazones
+        _texto(surface, f_ch, "Intentos", (ANCHO // 2 + 120, 9), (226, 200, 150))
+        lleno, vacio = self._corazon(True), self._corazon(False)
+        for i in range(INTENTOS):
+            surface.blit(lleno if i < self.intentos else vacio, (ANCHO // 2 + 120 + i * 26, 22))
+
+        # ---- barra inferior (solo mientras se construye)
+        if self.fase == "construccion":
+            inf = pygame.Rect(0, BARRA_INF_Y, ANCHO, ALTO - BARRA_INF_Y)
+            barra(inf, borde_arriba=True)
+            dibujar_info_material(surface, pygame.Rect(14 + 5 * 88 + 24, BARRA_INF_Y + 10, ANCHO - (14 + 5 * 88 + 24) - 20, 40),
+                                  VIGAS[self.material], self.resist_max, self.restante)
+
+    def _corazon(self, lleno):
+        if not hasattr(self, "_corazones"):
+            self._corazones = {True: estilo.icono_pixel("corazon", 2, (236, 72, 84)),
+                               False: estilo.icono_pixel("corazon", 2, (82, 70, 92))}
+        return self._corazones[lleno]
 
     def draw(self, surface):
         simulando = self.fase != "construccion"
@@ -416,13 +488,19 @@ class GameScene(Scene):
             surface.blit(self.img_quieto, self.img_quieto.get_rect(center=self.inicio))
         self._dibujar_vista_previa(surface)
 
-        t1 = self.fuente.render(f"Nivel {self.nivel + 1}/{len(NIVELES)}: {self.datos['nombre']}", True, estilo.TINTA)
-        t2 = self.fuente.render(f"Presupuesto: ${self.restante}  Intentos: {self.intentos}", True, estilo.TINTA)
-        surface.blit(t1, (20, 46))
-        surface.blit(t2, (ANCHO - 20 - t2.get_width(), 46))
+        if SELECTOR_POSICION == "abajo":
+            self._dibujar_barras(surface)
+        else:
+            t1 = self.fuente.render(f"Nivel {self.nivel + 1}/{len(NIVELES)}: {self.datos['nombre']}", True, estilo.TINTA)
+            t2 = self.fuente.render(f"Presupuesto: ${self.restante}  Intentos: {self.intentos}", True, estilo.TINTA)
+            surface.blit(t1, (20, 46))
+            surface.blit(t2, (ANCHO - 20 - t2.get_width(), 46))
 
         for b in self.botones_mat:
-            b.color = COLOR_BOTON_SEL if MATERIALES_ORDEN[self.botones_mat.index(b)] == self.material else COLOR_BOTON
+            b.seleccionado = (b.material == self.material)
+            b.restante = self.restante
+        if self.btn_deshacer:
+            self.btn_deshacer.deshabilitado = not self.vigas
         for b in self._botones_activos():
             b.draw(surface)
         self.dialogos.draw()

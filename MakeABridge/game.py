@@ -11,7 +11,6 @@ from .scenes.end_scenes import GameOverScene, VictoryScene
 
 
 class FisicasGame(Game):
-    """Hereda de Game (GameLoop + gestor de escenas) del motor."""
 
     def __init__(self):
         super().__init__(ANCHO, ALTO, TITULO, FPS)
